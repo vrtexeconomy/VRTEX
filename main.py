@@ -11,12 +11,26 @@ import motor.motor_asyncio
 from datetime import datetime
 
 
+# -------- COG IMPORTS --------
+from economy import Economy
+
+
 # -------- CONFIG --------
 TOKEN = os.getenv("DISCORD_TOKEN")
 MONGO_URI = os.getenv("MONGO_URI")
 
 BOT_NAME = "VRTEX"
-BOT_VERSION = "1.0"
+BOT_VERSION = "26.3"
+
+
+# -------- DEBUG / SAFETY --------
+print("TOKEN:", TOKEN)
+
+if not TOKEN:
+    raise Exception("DISCORD_TOKEN is missing in environment variables")
+
+if not MONGO_URI:
+    raise Exception("MONGO_URI is missing")
 
 
 # -------- PREFIX MANAGEMENT --------
@@ -70,6 +84,10 @@ async def setup_user(user_id: int):
             "last_work": None,
             "inventory": [],
             "created_at": datetime.utcnow()
+            "last_daily": None,
+            "last_weekly": None,
+            "last_monthly": None,
+            "last_vote": None,
         })
 
 
@@ -433,3 +451,27 @@ async def setup(interaction: Interaction):
         view=VRTEXPlusView(),
         ephemeral=True
     )
+
+# ==============================
+# BOT STARTUP
+# ==============================
+
+@bot.event
+async def on_ready():
+    print(f"{BOT_NAME} is online!")
+
+    # Load cached data
+    await fetch_all_data()
+
+    # Load economy system
+    await bot.add_cog(Economy(bot))
+
+    # Sync slash commands
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} commands")
+    except Exception as e:
+        print(e)
+
+
+bot.run(TOKEN)
