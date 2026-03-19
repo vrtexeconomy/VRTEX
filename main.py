@@ -1,4 +1,3 @@
-
 # ==============================
 # VRTEX BOT - LAYER 1 (CORE)
 # ==============================
@@ -18,6 +17,34 @@ MONGO_URI = os.getenv("MONGO_URI")
 
 BOT_NAME = "VRTEX"
 BOT_VERSION = "1.0"
+
+
+# -------- PREFIX MANAGEMENT --------
+async def get_prefix(bot, message):
+
+    if not message.guild:
+        return ["v"]
+
+    server = cached_servers.get(message.guild.id)
+
+    # default prefix always works
+    prefixes = ["v"]
+
+    if server:
+        # if server has VRTEX+ and custom prefix
+        if server.get("vrt_ex_plus") and server.get("prefix") != "v":
+            prefixes.append(server.get("prefix"))
+
+    return prefixes
+
+# -------- BOT INITIALIZATION --------
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(
+    command_prefix=get_prefix,
+    intents=intents
+)
 
 
 # -------- DATABASE --------
@@ -53,7 +80,7 @@ async def setup_server(guild_id: int):
     if not server:
         await servers_collection.insert_one({
             "guild_id": guild_id,
-            "prefix": "!",
+            "prefix": "v",
             "vrt_ex_plus": False,
             "created_at": datetime.utcnow()
         })
@@ -140,7 +167,7 @@ async def get_server(guild_id: int):
     if guild_id not in cached_servers:
         new_server = {
             "guild_id": guild_id,
-            "prefix": "!",
+            "prefix": "v",
             "vrt_ex_plus": False,
             "setup_completed": False,
             "created_at": datetime.utcnow()
